@@ -34,9 +34,11 @@ from pathlib import Path
 
 HOST = "0.0.0.0"  # Bind to all interfaces so Codespaces can forward
 PORT = 8765
-VERSION = "7.0.0"
+VERSION = "7.1.0"
 HOME = Path(os.path.expanduser("~"))
-TOKEN = os.environ.get("POCKETAGENT_TOKEN", "")  # Optional; if set, required
+# Token is OPTIONAL — the codespace URL is already unguessable.
+# Only set POCKETAGENT_TOKEN env var if you want extra auth. Defaults to off.
+TOKEN = os.environ.get("POCKETAGENT_TOKEN", "")
 MAX_FILE_READ = 2_000_000  # 2MB for cloud (more generous than phone)
 MAX_OUTPUT = 2_000_000
 

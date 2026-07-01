@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # PocketAgent Cloud Daemon setup — runs on codespace creation.
 # Installs common dev tools and starts the daemon in the background.
+# Token is OPTIONAL — the codespace URL is already unguessable.
 
 set -e
 
@@ -20,19 +21,17 @@ fi
 mkdir -p ~/.pocketagent
 cp daemon.py ~/.pocketagent/daemon.py
 
-# Generate auth token (optional, for extra security)
-if [ ! -f ~/.pocketagent/token ]; then
-    python3 -c "import secrets; print(secrets.token_urlsafe(32))" > ~/.pocketagent/token
-    chmod 600 ~/.pocketagent/token
-fi
+# NOTE: Token is OPTIONAL. The codespace URL is already unguessable.
+# If you want extra auth, create ~/.pocketagent/token manually and the
+# daemon will read it via POCKETAGENT_TOKEN env var. By default, no token.
 
 echo "✓ Setup complete"
 echo ""
-echo "Starting PocketAgent daemon..."
+echo "Starting PocketAgent daemon (no token required)..."
 cd ~/.pocketagent
 
 # Start daemon in background, log to file
-export POCKETAGENT_TOKEN=$(cat ~/.pocketagent/token)
+# POCKETAGENT_TOKEN is empty by default — no auth needed
 nohup python3 daemon.py > ~/.pocketagent/daemon.log 2>&1 &
 echo $! > ~/.pocketagent/daemon.pid
 disown
@@ -42,13 +41,18 @@ if kill -0 $(cat ~/.pocketagent/daemon.pid) 2>/dev/null; then
     echo "✓ Daemon running (PID $(cat ~/.pocketagent/daemon.pid))"
     echo ""
     echo "=== Connection Info ==="
-    echo "Public URL: https://${CODESPACE_NAME}-8765.app.github.dev"
-    echo "Auth token: $(cat ~/.pocketagent/token)"
     echo ""
-    echo "In the PocketAgent app:"
-    echo "  1. Settings → Cloud → paste the URL above"
-    echo "  2. Settings → Cloud → paste the token"
-    echo "  3. Tap Connect"
+    echo "In the PocketAgent app → Settings → Cloud Linux:"
+    echo ""
+    echo "  Codespace URL: https://${CODESPACE_NAME}-8765.app.github.dev"
+    echo "  Daemon Token: (leave empty)"
+    echo ""
+    echo "Tap 'Save & Connect'. You're done!"
+    echo ""
+    # Keep the codespace alive by tailing the log
+    echo "Daemon log (Ctrl+C to stop watching, daemon keeps running):"
+    echo "---"
+    tail -f ~/.pocketagent/daemon.log 2>/dev/null || true
 else
     echo "✗ Daemon failed to start. Check ~/.pocketagent/daemon.log"
     cat ~/.pocketagent/daemon.log 2>/dev/null || true
